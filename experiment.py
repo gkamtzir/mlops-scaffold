@@ -4,7 +4,7 @@ from joblib import dump
 from train import train
 from pathlib import Path
 from evaluate import evaluate
-from scale import standard_scale
+from scale import standard_scale, minmax_scale
 from typing import Any
 from sklearn.tree import DecisionTreeRegressor
 import mlflow
@@ -13,7 +13,7 @@ import time
 
 def run_experiment(model: DecisionTreeRegressor, parameters: Any, x: pd.DataFrame, y: pd.DataFrame,
                    test_size: float, model_type: str, run_name: str, experiment_details: Any, metadata: Any,
-                   mode="grid_search", scale=False):
+                   mode="grid_search", scale=None):
     """
     Run experiment based on the given data.
     :param model: The model to be trained.
@@ -26,7 +26,8 @@ def run_experiment(model: DecisionTreeRegressor, parameters: Any, x: pd.DataFram
     :param experiment_details: The experiment details.
     :param metadata: The metadata.
     :param mode: (Optional) The hyperparameter optimization method.
-    :param scale: (Optional) Indicates the data must be scaled.
+    :param scale: (Optional) Indicates the method based on which
+    the data will be scaled. Available options are `standard` and `minmax`.
     """
     # Create experiment.
     experiment_id = None
@@ -46,17 +47,17 @@ def run_experiment(model: DecisionTreeRegressor, parameters: Any, x: pd.DataFram
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name):
         # Log parameters.
         mlflow.log_artifact(experiment_details["artifact"])
-        mlflow.log_param("Test Case", metadata["test_case"])
-        mlflow.log_param("Action Id", metadata["action_id"])
-        mlflow.log_param("Type Id", metadata["type_id"])
-        mlflow.log_param("Noise", metadata["noise"])
+        mlflow.log_param("Mode", metadata["mode"])
+        mlflow.log_param("Scale", metadata["scale"])
         mlflow.log_param("features", ', '.join(x.columns.tolist()))
 
         # Splitting training and test set.
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=1)
 
-        if scale:
+        if scale == "standard":
             x_train, x_test = standard_scale(x_train, x_test)
+        elif scale == "minmax":
+            x_train, x_test = minmax_scale(x_train, x_test)
 
         mlflow.set_tag("Model", model_type)
 
@@ -77,14 +78,12 @@ def run_experiment(model: DecisionTreeRegressor, parameters: Any, x: pd.DataFram
         mlflow.sklearn.log_model(model_results.best_estimator_, "model")
 
 
-def create_run_name(prefix: str, action_id: int, type_id: int, noise: int, area: str) -> str:
+def create_run_name(prefix: str, mode: str, scale: str) -> str:
     """
     Creates run name based on the given parameters.
     :param prefix: The prefix to be used.
-    :param action_id: The action id.
-    :param type_id: The type id.
-    :param noise: The noise usage.
-    :param area: The area of interest.
+    :param mode: The hyperparameter optimization mode.
+    :param scale: The scale mode.
     :return: The run name.
     """
-    return f"{prefix}_action_id_{action_id}_type_id_{type_id}_noise_{noise}_area_{area}_{int(time.time())}"
+    return f"{prefix}_mode_{mode}_scale_{scale}_{int(time.time())}"
