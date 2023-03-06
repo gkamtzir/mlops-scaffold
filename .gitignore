@@ -1,0 +1,8 @@
+.idea
+__pycache__/
+*.egg-info/
+.installed.cfg
+*.egg:w
+:w
+libs
+venv
