@@ -1,10 +1,10 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from joblib import dump
-from train import train
+from core.train import train
 from pathlib import Path
-from evaluate import evaluate
-from scale import standard_scale, minmax_scale
+from core.evaluate import evaluate
+from core.scale import standard_scale, minmax_scale
 from typing import Any
 from sklearn.tree import DecisionTreeRegressor
 import mlflow

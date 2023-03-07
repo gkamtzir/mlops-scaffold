@@ -9,5 +9,5 @@ setup(
     author_email="georgekam96@gmail.com",
     description="Basic MLOps scaffold for data science projects.",
     packages=find_packages(),
-    install_requires=["pandas", "numpy", "plotly", "matplotlib", "scikit-learn", "mlflow", "scikit-optimize"],
+    install_requires=["pandas", "numpy", "matplotlib", "scikit-learn", "mlflow", "scikit-optimize"],
 )

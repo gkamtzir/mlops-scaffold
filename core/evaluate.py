@@ -5,7 +5,7 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from skopt import BayesSearchCV
 from sklearn.model_selection._search import BaseSearchCV
 from sklearn.inspection import permutation_importance, PartialDependenceDisplay
-from NumpyArrayEncoder import NumpyArrayEncoder
+from core.NumpyArrayEncoder import NumpyArrayEncoder
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

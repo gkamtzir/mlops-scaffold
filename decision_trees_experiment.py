@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.tree import DecisionTreeRegressor
-from experiment import run_experiment, create_run_name
-from utilities import read_experiment_parameters
+from core.experiment import run_experiment, create_run_name
+from core.utilities import read_experiment_parameters
 from skopt.space import Categorical, Integer
 import json
 
