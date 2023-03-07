@@ -7,59 +7,70 @@ from core.evaluate import evaluate
 from core.scale import standard_scale, minmax_scale
 from typing import Any
 from sklearn.tree import DecisionTreeRegressor
+from core.utilities import read_experiment_parameters
 import mlflow
 import time
+import json
 
 
-def run_experiment(model: DecisionTreeRegressor, parameters: Any, x: pd.DataFrame, y: pd.DataFrame,
-                   test_size: float, model_type: str, run_name: str, experiment_details: Any, metadata: Any,
-                   mode="grid_search", scale=None):
+def run_experiment(model: DecisionTreeRegressor, parameters: Any):
     """
     Run experiment based on the given data.
     :param model: The model to be trained.
     :param parameters: The parameters to be used.
-    :param x: All available features.
-    :param y: All available targets.
-    :param test_size: The test size to be used.
-    :param model_type: The model type.
-    :param run_name: The name of the run.
-    :param experiment_details: The experiment details.
-    :param metadata: The metadata.
-    :param mode: (Optional) The hyperparameter optimization method.
-    :param scale: (Optional) Indicates the method based on which
     the data will be scaled. Available options are `standard` and `minmax`.
     """
+    # Reading input.
+    data_file, experiment_id, experiment_name, experiment_tags, \
+        mode, scale, test_size = read_experiment_parameters()
+    df = pd.read_csv(data_file)
+
     # Create experiment.
-    experiment_id = None
-    if experiment_details["id"] is not None:
-        new_experiment = mlflow.get_experiment(experiment_details["id"])
+    run_name = create_run_name(experiment_name, mode, scale)
+
+    if experiment_id is not None:
+        new_experiment = mlflow.get_experiment(experiment_id)
         if new_experiment is not None:
             experiment_id = new_experiment.experiment_id
+            experiment_name = new_experiment.name
         else:
             return
     else:
-        experiment_id = mlflow.create_experiment(experiment_details["name"],
-                                                 tags=experiment_details["tags"])
+        experiment_id = mlflow.create_experiment(experiment_name,
+                                                 tags=experiment_tags)
+
+    experiment_details = {
+        "id": experiment_id,
+        "name": experiment_name,
+        "artifact": data_file,
+        "tags": json.loads(experiment_tags) if experiment_tags is not None else None
+    }
+
+    print(f"Total number of rows: {df.shape}")
+
+    y = df["Y"]
+    X = df.drop("Y", axis=1)
+
     # Creating experiment folder.
-    Path(f"./results/{model_type}/{experiment_id}/{run_name}").mkdir(parents=True, exist_ok=True)
+    Path(f"./results/{experiment_name}/{run_name}").mkdir(parents=True, exist_ok=True)
 
     mlflow.autolog()
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name):
         # Log parameters.
         mlflow.log_artifact(experiment_details["artifact"])
-        mlflow.log_param("Mode", metadata["mode"])
-        mlflow.log_param("Scale", metadata["scale"])
-        mlflow.log_param("features", ', '.join(x.columns.tolist()))
+        mlflow.log_param("Mode", mode)
+        mlflow.log_param("Scale", scale)
+        mlflow.log_param("features", ', '.join(X.columns.tolist()))
 
         # Splitting training and test set.
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=1)
+        x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=1)
 
         if scale == "standard":
             x_train, x_test = standard_scale(x_train, x_test)
         elif scale == "minmax":
             x_train, x_test = minmax_scale(x_train, x_test)
 
-        mlflow.set_tag("Model", model_type)
+        mlflow.set_tag("Model", type(model).__name__)
 
         mlflow.log_param("test_size", test_size)
 
@@ -71,10 +82,10 @@ def run_experiment(model: DecisionTreeRegressor, parameters: Any, x: pd.DataFram
         }
 
         # Evaluating and storing results.
-        evaluate(model_results, x_test, y_test, metadata, x.columns, model_type, f"{experiment_id}/{run_name}")
+        evaluate(model_results, x_test, y_test, metadata, X.columns, experiment_name, f"{run_name}")
 
         # Saving the model.
-        dump(model_results.best_estimator_, f"./results/{model_type}/{experiment_id}/{run_name}/model.joblib")
+        dump(model_results.best_estimator_, f"./results/{experiment_name}/{run_name}/model.joblib")
         mlflow.sklearn.log_model(model_results.best_estimator_, "model")
 
 
