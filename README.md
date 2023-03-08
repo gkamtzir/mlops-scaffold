@@ -39,7 +39,8 @@ running in a couple of minutes.
 ## Project Structure and General Information
 The data are stored in the `data` folder, any data related to MLFlow are stored
 in the `mlruns` folder, while we manually keep some experiment results in the
-`results` folder. All three folders are versioned via DVC.
+`results` folder. All three folders are versioned via DVC. The GDrive folder is
+public and contains some rudimentary data for demonstration reasons.
 
 Regarding the core scripts we have:
 - `/core/utilities.py`: contains a utility that reads input parameters through the command line.
@@ -74,6 +75,8 @@ py .\decision_trees_experiment.py --data-file "./data/diabetes.csv" --mode "baye
 
 The details list of parameters can be found below:
 - `--data-file {data_file}` The data file to be used in the training process.
+- `--test-size {test_size}` The test size.
+- `--target {target}` The column name of the target variable.
 - `--mode {hyperparameter_tuning_id}` `'grid_search'` -> Grid Search, `'bayesian'` -> Baysian, else -> Random.
 - `--scale {scale}` `'standard'` -> Standard Scaler, `'minmax'` -> Min-Max Scaler.
 - `--experiment-name {name}` The name of the experiment to be created.
