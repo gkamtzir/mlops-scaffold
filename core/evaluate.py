@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 def evaluate(model_results: Union[GridSearchCV, BayesSearchCV, RandomizedSearchCV], x_test: pd.DataFrame,
-             y_test: pd.DataFrame, metadata: any, features, model_type: str, experiment_path: str):
+             y_test: pd.DataFrame, metadata: any, features, experiment_name: str, experiment_path: str):
     """
     Evaluates and stores the results to JSON file in the given folder.
     :param model_results: The `GridSearchCV`, `BayesSearchCV` or the `RandomizedSearchCV` results.
@@ -23,7 +23,7 @@ def evaluate(model_results: Union[GridSearchCV, BayesSearchCV, RandomizedSearchC
     :param y_test: The testing targets.
     :param metadata: Any extra metadata to be saved.
     :param features: The available features.
-    :param model_type: The model type.
+    :param experiment_name: The name of experiment.
     :param experiment_path: The experiment path.
     """
     y_prediction = model_results.predict(x_test)
@@ -38,14 +38,14 @@ def evaluate(model_results: Union[GridSearchCV, BayesSearchCV, RandomizedSearchC
     }
 
     # Calculating feature importance.
-    feature_importance(model_results.best_estimator_, features, x_test, y_test, model_type, experiment_path)
+    feature_importance(model_results.best_estimator_, features, x_test, y_test, experiment_name, experiment_path)
 
     # Calculating partial dependence plots.
     for index, column in enumerate(features.tolist()):
-        partial_dependence(model_results.best_estimator_, x_test, index, column, model_type, experiment_path)
+        partial_dependence(model_results.best_estimator_, x_test, index, column, experiment_name, experiment_path)
 
     # Visualizing the predictions.
-    visualize_predictions(y_test, y_prediction, model_type, experiment_path)
+    visualize_predictions(y_test, y_prediction, experiment_name, experiment_path)
 
     mlflow.log_metric("test_mean_absolute_error", mean_absolute_error(y_test, y_prediction))
     mlflow.log_metric("test_mean_squared_error", mean_squared_error(y_test, y_prediction))
@@ -60,12 +60,12 @@ def evaluate(model_results: Union[GridSearchCV, BayesSearchCV, RandomizedSearchC
         mlflow.log_metric("std_test_score", model_results.cv_results_["std_test_score"][i])
         mlflow.log_metric("rank_test_score", model_results.cv_results_["rank_test_score"][i])
 
-    with open(f"./results/{model_type}/{experiment_path}/results.json", "w", encoding="utf8") as file:
+    with open(f"./results/{experiment_name}/{experiment_path}/results.json", "w", encoding="utf8") as file:
         json.dump({**results, **metadata}, file, cls=NumpyArrayEncoder)
 
 
 def feature_importance(model: BaseSearchCV, features: pd.Index, x_test: pd.DataFrame, y_test: pd.DataFrame,
-                       model_type: str, experiment_path: str):
+                       experiment_name: str, experiment_path: str):
     """
     Calculates and plots the feature importance and permutation
     importance of the given model.
@@ -73,7 +73,7 @@ def feature_importance(model: BaseSearchCV, features: pd.Index, x_test: pd.DataF
     :param features: The available features.
     :param x_test: The testing features.
     :param y_test: The testing targets.
-    :param model_type: The model type.
+    :param experiment_name: The name of experiment.
     :param experiment_path: The experiment path.
     """
     # Feature importance.
@@ -97,10 +97,10 @@ def feature_importance(model: BaseSearchCV, features: pd.Index, x_test: pd.DataF
     plt.xlabel("Decrease in accuracy")
     fig.tight_layout()
 
-    fig.savefig(f"./results/{model_type}/{experiment_path}/feature_importance.png", dpi=200)
+    fig.savefig(f"./results/{experiment_name}/{experiment_path}/feature_importance.png", dpi=200)
 
 
-def partial_dependence(model: BaseSearchCV, x: pd.DataFrame, feature_index: int, feature_name: str, model_type: str,
+def partial_dependence(model: BaseSearchCV, x: pd.DataFrame, feature_index: int, feature_name: str, experiment_name: str,
                        experiment_path: str):
     """
     Plots the partial dependence plots for the given model and features.
@@ -108,23 +108,23 @@ def partial_dependence(model: BaseSearchCV, x: pd.DataFrame, feature_index: int,
     :param x: The data.
     :param feature_index: The feature index to be plotted.
     :param feature_name: The feature name to be plotted.
-    :param model_type: The regressor type.
+    :param experiment_name: The experiment name.
     :param experiment_path: The experiment name.
     """
     PartialDependenceDisplay.from_estimator(model, x, features=[feature_index], kind="average")
 
     figure = plt.gcf()
     figure.suptitle("Partial Dependence Plot")
-    figure.savefig(f"./results/{model_type}/{experiment_path}/partial_dependence_{feature_name}.png", dpi=200)
+    figure.savefig(f"./results/{experiment_name}/{experiment_path}/partial_dependence_{feature_name}.png", dpi=200)
 
 
-def visualize_predictions(y_test: pd.DataFrame, y_prediction: pd.DataFrame, model_type: str,
+def visualize_predictions(y_test: pd.DataFrame, y_prediction: pd.DataFrame, experiment_name: str,
                           experiment_path: str):
     """
     Visualizing the predictions.
     :param y_test: The actual targets.
     :param y_prediction: The predicted targets.
-    :param model_type: The model type.
+    :param experiment_name: The experiment name.
     :param experiment_path: The experiment path.
     """
     figure = plt.figure(figsize=(10, 5))
@@ -137,7 +137,7 @@ def visualize_predictions(y_test: pd.DataFrame, y_prediction: pd.DataFrame, mode
     plt.plot(y_test, y_test, "r")
 
     figure.tight_layout()
-    figure.savefig(f"./results/{model_type}/{experiment_path}/predictions.png", dpi=200)
+    figure.savefig(f"./results/{experiment_name}/{experiment_path}/predictions.png", dpi=200)
 
 
 def feature_correlation(df: pd.DataFrame, name: str):

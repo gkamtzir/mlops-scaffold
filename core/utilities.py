@@ -19,7 +19,8 @@ def read_experiment_parameters():
     parser.add_argument("--mode", help="The hyperparameter optimization method", default="grid_search")
     parser.add_argument("--scale", help="The scaling method to be used", default=None)
     parser.add_argument("--test-size", help="The test size", default=0.2)
+    parser.add_argument("--target", help="The name of the target column", default=None)
 
     args = parser.parse_args()
     return args.data_file, args.experiment_id, args.experiment_name, args.experiment_tags, \
-           args.mode, args.scale, float(args.test_size)
+           args.mode, args.scale, float(args.test_size), args.target

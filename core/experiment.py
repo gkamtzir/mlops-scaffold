@@ -22,7 +22,12 @@ def run_experiment(model: DecisionTreeRegressor, parameters: Any):
     """
     # Reading input.
     data_file, experiment_id, experiment_name, experiment_tags, \
-        mode, scale, test_size = read_experiment_parameters()
+        mode, scale, test_size, target = read_experiment_parameters()
+
+    if target is None:
+        print("Specifying the targer variable is mandatory")
+        return
+
     df = pd.read_csv(data_file)
 
     # Create experiment.
@@ -48,8 +53,8 @@ def run_experiment(model: DecisionTreeRegressor, parameters: Any):
 
     print(f"Total number of rows: {df.shape}")
 
-    y = df["Y"]
-    X = df.drop("Y", axis=1)
+    y = df[target]
+    X = df.drop(target, axis=1)
 
     # Creating experiment folder.
     Path(f"./results/{experiment_name}/{run_name}").mkdir(parents=True, exist_ok=True)
