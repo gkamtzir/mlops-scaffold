@@ -6,3 +6,6 @@ __pycache__/
 :w
 libs
 venv
+/data
+/mlruns
+/results
