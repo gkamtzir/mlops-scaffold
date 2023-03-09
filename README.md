@@ -82,3 +82,16 @@ The details list of parameters can be found below:
 - `--experiment-name {name}` The name of the experiment to be created.
 - `--experiment-tags {tags}` A dictionary containing any extra information.
 - `--experiment-id {id}` The id of an already existing experiment.
+
+## Results
+The results can be visualized in the MLFlow UI. To do so, run:
+```bash
+mlflow ui
+```
+Additionally, in the `results` folder one can find extra plots like:
+- Feature importance plot
+- Permutation importance plot
+- Partial dependence plot
+
+Of course, new evaluation metrics or plots can be added via the `evaluation.py`
+script.
